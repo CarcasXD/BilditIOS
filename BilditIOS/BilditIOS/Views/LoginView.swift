@@ -9,6 +9,7 @@ import SwiftUI
 
 struct LoginView: View {
     
+    @State private var usuarioLogueado: Usuario? = nil
     @State private var usuario: String = ""
     @State private var contrasena: String = ""
     @State private var irAPantallaInicio = false
@@ -145,7 +146,7 @@ struct LoginView: View {
     
     var navigationLoginView: some View {
         NavigationLink(
-            destination: PantallaInicioView(),
+            destination: destinoPantallaInicio(),
             isActive: $irAPantallaInicio
         ) {
             EmptyView()
@@ -158,16 +159,25 @@ struct LoginView: View {
     }
     
     func iniciarSesion() {
-        let loginValido = DatabaseManager.shared.validarLogin(
+        let resultado = DatabaseManager.shared.validarLogin(
             usuario: usuario,
             contrasena: contrasena
         )
         
-        if loginValido {
+        if let usuarioValido = resultado {
+            usuarioLogueado = usuarioValido
             mostrarError = false
             irAPantallaInicio = true
         } else {
             mostrarError = true
+        }
+    }
+    
+    func destinoPantallaInicio() -> some View {
+        if let usuarioValido = usuarioLogueado {
+            return AnyView(PantallaInicioView(usuario: usuarioValido))
+        } else {
+            return AnyView(Text("Error al cargar usuario"))
         }
     }
 }

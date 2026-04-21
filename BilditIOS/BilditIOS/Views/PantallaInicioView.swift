@@ -9,11 +9,8 @@ import SwiftUI
 
 struct PantallaInicioView: View {
     
-    let proyectos = [
-        "Grupo Roble - Santa Ana",
-        "Constructora Sinai - Quezaltepeque",
-        "Grupo Siman - Ahuachapan"
-    ]
+    var usuario: Usuario
+    @State private var proyectos: [Proyecto] = []
     
     var body: some View {
         ZStack {
@@ -21,92 +18,147 @@ struct PantallaInicioView: View {
                 .edgesIgnoringSafeArea(.all)
             
             ScrollView {
-                VStack(alignment: .center, spacing: 0) {
-                    
-                    Spacer()
-                        .frame(height: 30)
-                    
-                    Text("Hola Jose!")
-                        .font(.system(size: 28, weight: .bold))
-                        .foregroundColor(.black)
-                        .underline()
-                    
-                    Spacer()
-                        .frame(height: 18)
-                    
-                    HStack(spacing: 12) {
-                        Button(action: {
-                            print("Nuevo proyecto")
-                        }) {
-                            Text("Nuevo proyecto")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 130, height: 42)
-                                .background(Color(red: 0.05, green: 0.62, blue: 0.67))
-                                .cornerRadius(12)
-                        }
-                        
-                        Button(action: {
-                            print("Proyectos cerrados")
-                        }) {
-                            Text("Proyectos cerrados")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 150, height: 42)
-                                .background(Color(red: 0.05, green: 0.62, blue: 0.67))
-                                .cornerRadius(12)
-                        }
-                    }
-                    
-                    Spacer()
-                        .frame(height: 30)
-                    
-                    VStack(spacing: 18) {
-                        ForEach(proyectos, id: \.self) { proyecto in
-                            ProyectoCardView(nombreProyecto: proyecto)
-                        }
-                    }
-                    
-                    Spacer()
-                        .frame(height: 30)
+                VStack(spacing: 0) {
+                    encabezadoView
+                    botonesView
+                    listaProyectosView
+                    Spacer().frame(height: 30)
                 }
-                .frame(maxWidth: .infinity)
                 .padding(.horizontal, 20)
             }
         }
         .navigationBarHidden(true)
+        .onAppear {
+            cargarProyectos()
+        }
+    }
+    
+    var encabezadoView: some View {
+        VStack(spacing: 0) {
+            Spacer().frame(height: 30)
+            
+            Text("Hola \(usuario.nombre)!")
+                .font(.system(size: 28, weight: .bold))
+                .foregroundColor(.black)
+                .underline()
+            
+            Spacer().frame(height: 18)
+        }
+    }
+    
+    var botonesView: some View {
+        HStack(spacing: 12) {
+            NavigationLink(destination: NuevoProyectoView(usuario: usuario, proyectoEditar: nil)) {
+                Text("Nuevo proyecto")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 130, height: 42)
+                    .background(Color(red: 0.05, green: 0.62, blue: 0.67))
+                    .cornerRadius(12)
+            }
+            
+            Button(action: {
+                print("Proyectos cerrados")
+            }) {
+                Text("Proyectos cerrados")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 150, height: 42)
+                    .background(Color(red: 0.05, green: 0.62, blue: 0.67))
+                    .cornerRadius(12)
+            }
+        }
+    }
+    
+    var listaProyectosView: some View {
+        VStack(spacing: 18) {
+            Spacer().frame(height: 30)
+            
+            ForEach(proyectos) { proyecto in
+                ProyectoCardView(
+                    proyecto: proyecto,
+                    usuario: usuario,
+                    onDelete: {
+                        borrarProyecto(proyecto)
+                    }
+                )
+            }
+        }
+    }
+    
+    func cargarProyectos() {
+        proyectos = DatabaseManager.shared.obtenerProyectosAbiertos(usuarioId: usuario.id)
+    }
+    
+    func borrarProyecto(_ proyecto: Proyecto) {
+        let resultado = DatabaseManager.shared.eliminarProyecto(id: proyecto.id)
+        
+        if resultado {
+            cargarProyectos()
+        }
     }
 }
 
 struct ProyectoCardView: View {
-    let nombreProyecto: String
+    let proyecto: Proyecto
+    let usuario: Usuario
+    var onDelete: () -> Void
     
     var body: some View {
-        Button(action: {
-            print("Abrir proyecto: \(nombreProyecto)")
-        }) {
+        VStack(spacing: 10) {
             HStack {
-                Text(nombreProyecto)
+                Text("\(proyecto.nombre) - \(proyecto.ubicacion)")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.black)
                     .multilineTextAlignment(.leading)
                 
                 Spacer()
             }
-            .padding()
-            .frame(width: 320, height: 72)
-            .background(Color.white)
-            .cornerRadius(14)
-            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+            
+            HStack(spacing: 12) {
+                NavigationLink(destination: NuevoProyectoView(usuario: usuario, proyectoEditar: proyecto)) {
+                    Text("Editar")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 100, height: 36)
+                        .background(Color.orange)
+                        .cornerRadius(10)
+                }
+                
+                Button(action: {
+                    onDelete()
+                }) {
+                    Text("Eliminar")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 100, height: 36)
+                        .background(Color.red)
+                        .cornerRadius(10)
+                }
+            }
         }
-        .buttonStyle(PlainButtonStyle())
+        .padding()
+        .frame(width: 320)
+        .background(Color.white)
+        .cornerRadius(14)
+        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
     }
 }
 
 struct PantallaInicioView_Previews: PreviewProvider {
     static var previews: some View {
+        let usuarioPrueba = Usuario(
+            id: 1,
+            usuario: "carcas",
+            nombre: "Carlos",
+            apellido: "Rivas",
+            correo: "carlos@bildit.com",
+            telefono: "77886754",
+            ocupacion: "Ingeniero"
+        )
+        
         NavigationView {
-            PantallaInicioView()
+            PantallaInicioView(usuario: usuarioPrueba)
         }
     }
 }
