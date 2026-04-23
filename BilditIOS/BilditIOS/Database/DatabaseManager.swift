@@ -15,18 +15,22 @@ class DatabaseManager {
     
     private init() {
         openDatabase()
-        
-        createUsuariosTable()
-        createProyectosTable()
-        createPartidasCatalogoTable()
-        createProyectoPartidaTable()
-        
-        insertUsuarioPrueba()
-        insertarProyectosPrueba()
-        insertarPartidasCatalogo()
-        
-        asegurarPartidasDeProyecto(proyectoId: 1)
-        asegurarPartidasDeProyecto(proyectoId: 2)
+            
+            createUsuariosTable()
+            createProyectosTable()
+            createPartidasCatalogoTable()
+            createProyectoPartidaTable()
+            createDescripcionesCatalogoTable()
+            createProyectoDescripcionTable()
+            createDescripcionRecursoTable()
+            
+            insertUsuarioPrueba()
+            insertarProyectosPrueba()
+            insertarPartidasCatalogo()
+            insertarDescripcionesCatalogo()
+            
+            asegurarPartidasDeProyecto(proyectoId: 1)
+            asegurarPartidasDeProyecto(proyectoId: 2)
     }
     
     func getDatabasePath() -> String {
@@ -621,4 +625,613 @@ class DatabaseManager {
         sqlite3_finalize(statement)
         return resultado
     }
+    
+    func createDescripcionesCatalogoTable() {
+        let createTableString = """
+        CREATE TABLE IF NOT EXISTS descripciones_catalogo (
+            id INTEGER PRIMARY KEY,
+            partida_id INTEGER NOT NULL,
+            nombre TEXT NOT NULL
+        );
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, createTableString, -1, &statement, nil) == SQLITE_OK {
+            if sqlite3_step(statement) == SQLITE_DONE {
+                print("Tabla descripciones_catalogo creada correctamente")
+            } else {
+                print("No se pudo crear la tabla descripciones_catalogo")
+            }
+        } else {
+            print("Error al preparar createDescripcionesCatalogoTable")
+        }
+        
+        sqlite3_finalize(statement)
+    }
+
+    func createProyectoDescripcionTable() {
+        let createTableString = """
+        CREATE TABLE IF NOT EXISTS proyecto_descripcion (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            proyecto_id INTEGER NOT NULL,
+            partida_id INTEGER NOT NULL,
+            descripcion_id INTEGER NOT NULL,
+            subtotal REAL NOT NULL DEFAULT 0,
+            cantidad_total REAL NOT NULL DEFAULT 0,
+            UNIQUE(proyecto_id, partida_id, descripcion_id)
+        );
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, createTableString, -1, &statement, nil) == SQLITE_OK {
+            if sqlite3_step(statement) == SQLITE_DONE {
+                print("Tabla proyecto_descripcion creada correctamente")
+            } else {
+                print("No se pudo crear la tabla proyecto_descripcion")
+            }
+        } else {
+            print("Error al preparar createProyectoDescripcionTable")
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    func insertarDescripcionesCatalogo() {
+        let insertSQL = """
+        INSERT OR IGNORE INTO descripciones_catalogo (id, partida_id, nombre)
+        VALUES
+        (101, 1, 'Limpieza del terreno'),
+        (102, 1, 'Trazos y niveles'),
+        (103, 1, 'Excavaciones'),
+        (104, 1, 'Rellenos'),
+        (199, 1, 'Extras'),
+
+        (201, 2, 'Zapata aislada'),
+        (202, 2, 'Vigas de fundacion'),
+        (203, 2, 'Dados y anclajes'),
+        (204, 2, 'Losa de cimentacion'),
+        (299, 2, 'Extras'),
+
+        (301, 3, 'Columnas'),
+        (302, 3, 'Vigas'),
+        (303, 3, 'Losas'),
+        (304, 3, 'Escaleras'),
+        (399, 3, 'Extras'),
+
+        (401, 4, 'Muros'),
+        (402, 4, 'Tabiques'),
+        (403, 4, 'Mamposteria'),
+        (404, 4, 'Repellos'),
+        (499, 4, 'Extras'),
+
+        (501, 5, 'Pisos'),
+        (502, 5, 'Pintura'),
+        (503, 5, 'Puertas'),
+        (504, 5, 'Ventanas'),
+        (599, 5, 'Extras'),
+
+        (601, 6, 'Canalizacion'),
+        (602, 6, 'Cableado'),
+        (603, 6, 'Tableros'),
+        (604, 6, 'Luminarias'),
+        (699, 6, 'Extras'),
+
+        (701, 7, 'Tuberias'),
+        (702, 7, 'Lavabos'),
+        (703, 7, 'WC'),
+        (704, 7, 'Pruebas'),
+        (799, 7, 'Extras'),
+
+        (801, 8, 'Aceras'),
+        (802, 8, 'Jardineria'),
+        (803, 8, 'Muros'),
+        (899, 8, 'Extras'),
+
+        (901, 9, 'Extras');
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, insertSQL, -1, &statement, nil) == SQLITE_OK {
+            if sqlite3_step(statement) == SQLITE_DONE {
+                print("Descripciones catalogo insertadas")
+            } else {
+                print("No se pudieron insertar descripciones catalogo")
+            }
+        } else {
+            print("Error al preparar insertarDescripcionesCatalogo")
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    func asegurarDescripciones(proyectoId: Int, partidaId: Int) {
+        let insertSQL = """
+        INSERT OR IGNORE INTO proyecto_descripcion (proyecto_id, partida_id, descripcion_id, subtotal)
+        SELECT ?, ?, id, 0
+        FROM descripciones_catalogo
+        WHERE partida_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, insertSQL, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            sqlite3_bind_int(statement, 3, Int32(partidaId))
+            
+            if sqlite3_step(statement) == SQLITE_DONE {
+                print("Descripciones aseguradas para proyecto \(proyectoId), partida \(partidaId)")
+            } else {
+                print("No se pudieron asegurar descripciones")
+            }
+        } else {
+            print("Error al preparar asegurarDescripciones")
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    func obtenerDescripcionesDePartida(proyectoId: Int, partidaId: Int) -> [Descripcion] {
+        let query = """
+        SELECT dc.id, dc.nombre, pd.subtotal
+        FROM proyecto_descripcion pd
+        INNER JOIN descripciones_catalogo dc ON dc.id = pd.descripcion_id
+        WHERE pd.proyecto_id = ? AND pd.partida_id = ?
+        ORDER BY dc.id;
+        """
+        
+        var statement: OpaquePointer?
+        var descripciones: [Descripcion] = []
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let id = Int(sqlite3_column_int(statement, 0))
+                let nombre = String(cString: sqlite3_column_text(statement, 1))
+                let subtotal = sqlite3_column_double(statement, 2)
+                
+                let descripcion = Descripcion(
+                    id: id,
+                    nombre: nombre,
+                    subtotal: subtotal
+                )
+                
+                descripciones.append(descripcion)
+            }
+        } else {
+            print("Error al preparar obtenerDescripcionesDePartida")
+        }
+        
+        sqlite3_finalize(statement)
+        return descripciones
+    }
+    
+    func obtenerTotalPartida(proyectoId: Int, partidaId: Int) -> Double {
+        let query = """
+        SELECT IFNULL(SUM(subtotal), 0)
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ? AND partida_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var total: Double = 0
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                total = sqlite3_column_double(statement, 0)
+            }
+        } else {
+            print("Error al preparar obtenerTotalPartida")
+        }
+        
+        sqlite3_finalize(statement)
+        return total
+    }
+    
+    func partidaCompleta(proyectoId: Int, partidaId: Int) -> Bool {
+        let query = """
+        SELECT COUNT(*)
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ? AND partida_id = ?
+        AND NOT (cantidad_total > 0 AND subtotal > 0);
+        """
+        
+        var statement: OpaquePointer?
+        var completa = false
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                let pendientes = Int(sqlite3_column_int(statement, 0))
+                completa = (pendientes == 0)
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return completa
+    }
+
+    func cerrarPartida(proyectoId: Int, partidaId: Int) -> Bool {
+        if !partidaCompleta(proyectoId: proyectoId, partidaId: partidaId) {
+            return false
+        }
+        
+        let updateSQL = """
+        UPDATE proyecto_partida
+        SET estado = 'TERMINADA'
+        WHERE proyecto_id = ? AND partida_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var resultado = false
+        
+        if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            
+            if sqlite3_step(statement) == SQLITE_DONE {
+                resultado = true
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return resultado
+    }
+    
+    func createDescripcionRecursoTable() {
+        let createTableString = """
+        CREATE TABLE IF NOT EXISTS descripcion_recurso (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            proyecto_descripcion_id INTEGER NOT NULL,
+            nombre_recurso TEXT NOT NULL,
+            unidad TEXT NOT NULL,
+            cant_por_unidad REAL NOT NULL,
+            pu REAL NOT NULL
+        );
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, createTableString, -1, &statement, nil) == SQLITE_OK {
+            if sqlite3_step(statement) == SQLITE_DONE {
+                print("Tabla descripcion_recurso creada correctamente")
+            } else {
+                print("No se pudo crear la tabla descripcion_recurso")
+            }
+        } else {
+            print("Error al preparar createDescripcionRecursoTable")
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    func obtenerProyectoDescripcionId(proyectoId: Int, partidaId: Int, descripcionId: Int) -> Int? {
+        let query = """
+        SELECT id
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ? AND partida_id = ? AND descripcion_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var resultado: Int? = nil
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            sqlite3_bind_int(statement, 3, Int32(descripcionId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                resultado = Int(sqlite3_column_int(statement, 0))
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return resultado
+    }
+    
+    func insertarRecurso(
+        proyectoId: Int,
+        partidaId: Int,
+        descripcionId: Int,
+        nombreRecurso: String,
+        unidad: String,
+        cantidadPorUnidad: Double,
+        precioUnitario: Double
+    ) -> Bool {
+        
+        guard let proyectoDescripcionId = obtenerProyectoDescripcionId(
+            proyectoId: proyectoId,
+            partidaId: partidaId,
+            descripcionId: descripcionId
+        ) else {
+            print("No se encontró proyecto_descripcion_id")
+            return false
+        }
+        
+        let insertSQL = """
+        INSERT INTO descripcion_recurso
+        (proyecto_descripcion_id, nombre_recurso, unidad, cant_por_unidad, pu)
+        VALUES (?, ?, ?, ?, ?);
+        """
+        
+        var statement: OpaquePointer?
+        var resultado = false
+        
+        if sqlite3_prepare_v2(db, insertSQL, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoDescripcionId))
+            sqlite3_bind_text(statement, 2, (nombreRecurso as NSString).utf8String, -1, nil)
+            sqlite3_bind_text(statement, 3, (unidad as NSString).utf8String, -1, nil)
+            sqlite3_bind_double(statement, 4, cantidadPorUnidad)
+            sqlite3_bind_double(statement, 5, precioUnitario)
+            
+            if sqlite3_step(statement) == SQLITE_DONE {
+                resultado = true
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        
+        if resultado {
+            recalcularSubtotalDescripcion(proyectoId: proyectoId, partidaId: partidaId, descripcionId: descripcionId)
+            recalcularEstadoPartida(proyectoId: proyectoId, partidaId: partidaId)
+        }
+        
+        return resultado
+    }
+    
+    func obtenerRecursos(proyectoId: Int, partidaId: Int, descripcionId: Int) -> [Recurso] {
+        let query = """
+        SELECT dr.id, dr.nombre_recurso, dr.unidad, dr.cant_por_unidad, dr.pu
+        FROM descripcion_recurso dr
+        INNER JOIN proyecto_descripcion pd ON pd.id = dr.proyecto_descripcion_id
+        WHERE pd.proyecto_id = ? AND pd.partida_id = ? AND pd.descripcion_id = ?
+        ORDER BY dr.id;
+        """
+        
+        var statement: OpaquePointer?
+        var recursos: [Recurso] = []
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            sqlite3_bind_int(statement, 3, Int32(descripcionId))
+            
+            while sqlite3_step(statement) == SQLITE_ROW {
+                let id = Int(sqlite3_column_int(statement, 0))
+                let nombre = String(cString: sqlite3_column_text(statement, 1))
+                let unidad = String(cString: sqlite3_column_text(statement, 2))
+                let cantidad = sqlite3_column_double(statement, 3)
+                let precio = sqlite3_column_double(statement, 4)
+                
+                recursos.append(
+                    Recurso(
+                        id: id,
+                        nombreRecurso: nombre,
+                        unidad: unidad,
+                        cantidadPorUnidad: cantidad,
+                        precioUnitario: precio
+                    )
+                )
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return recursos
+    }
+    
+    func actualizarCantidadTotalDescripcion(
+        proyectoId: Int,
+        partidaId: Int,
+        descripcionId: Int,
+        cantidadTotal: Double
+    ) -> Bool {
+        
+        let updateSQL = """
+        UPDATE proyecto_descripcion
+        SET cantidad_total = ?
+        WHERE proyecto_id = ? AND partida_id = ? AND descripcion_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var resultado = false
+        
+        if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_double(statement, 1, cantidadTotal)
+            sqlite3_bind_int(statement, 2, Int32(proyectoId))
+            sqlite3_bind_int(statement, 3, Int32(partidaId))
+            sqlite3_bind_int(statement, 4, Int32(descripcionId))
+            
+            if sqlite3_step(statement) == SQLITE_DONE {
+                resultado = true
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        
+        if resultado {
+            recalcularSubtotalDescripcion(proyectoId: proyectoId, partidaId: partidaId, descripcionId: descripcionId)
+            recalcularEstadoPartida(proyectoId: proyectoId, partidaId: partidaId)
+        }
+        
+        return resultado
+    }
+    
+    func obtenerCantidadTotalDescripcion(proyectoId: Int, partidaId: Int, descripcionId: Int) -> Double {
+        let query = """
+        SELECT cantidad_total
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ? AND partida_id = ? AND descripcion_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var cantidad: Double = 0
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            sqlite3_bind_int(statement, 3, Int32(descripcionId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                cantidad = sqlite3_column_double(statement, 0)
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return cantidad
+    }
+
+    func obtenerTotalPorUnidadDescripcion(proyectoId: Int, partidaId: Int, descripcionId: Int) -> Double {
+        let query = """
+        SELECT IFNULL(SUM(dr.cant_por_unidad * dr.pu), 0)
+        FROM descripcion_recurso dr
+        INNER JOIN proyecto_descripcion pd ON pd.id = dr.proyecto_descripcion_id
+        WHERE pd.proyecto_id = ? AND pd.partida_id = ? AND pd.descripcion_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var total: Double = 0
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            sqlite3_bind_int(statement, 3, Int32(descripcionId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                total = sqlite3_column_double(statement, 0)
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return total
+    }
+
+    func recalcularSubtotalDescripcion(proyectoId: Int, partidaId: Int, descripcionId: Int) {
+        let cantidadTotal = obtenerCantidadTotalDescripcion(
+            proyectoId: proyectoId,
+            partidaId: partidaId,
+            descripcionId: descripcionId
+        )
+        
+        let totalPorUnidad = obtenerTotalPorUnidadDescripcion(
+            proyectoId: proyectoId,
+            partidaId: partidaId,
+            descripcionId: descripcionId
+        )
+        
+        let subtotal = cantidadTotal * totalPorUnidad
+        
+        let updateSQL = """
+        UPDATE proyecto_descripcion
+        SET subtotal = ?
+        WHERE proyecto_id = ? AND partida_id = ? AND descripcion_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_double(statement, 1, subtotal)
+            sqlite3_bind_int(statement, 2, Int32(proyectoId))
+            sqlite3_bind_int(statement, 3, Int32(partidaId))
+            sqlite3_bind_int(statement, 4, Int32(descripcionId))
+            
+            _ = sqlite3_step(statement)
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    func recalcularEstadoPartida(proyectoId: Int, partidaId: Int) {
+        let totalQuery = """
+        SELECT COUNT(*)
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ? AND partida_id = ?;
+        """
+        
+        let iniciadasQuery = """
+        SELECT COUNT(*)
+        FROM proyecto_descripcion pd
+        WHERE pd.proyecto_id = ? AND pd.partida_id = ?
+        AND (
+            pd.cantidad_total > 0
+            OR EXISTS (
+                SELECT 1
+                FROM descripcion_recurso dr
+                WHERE dr.proyecto_descripcion_id = pd.id
+            )
+        );
+        """
+        
+        let completasQuery = """
+        SELECT COUNT(*)
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ? AND partida_id = ?
+        AND cantidad_total > 0
+        AND subtotal > 0;
+        """
+        
+        var total = 0
+        var iniciadas = 0
+        var completas = 0
+        
+        total = ejecutarCount(query: totalQuery, proyectoId: proyectoId, partidaId: partidaId)
+        iniciadas = ejecutarCount(query: iniciadasQuery, proyectoId: proyectoId, partidaId: partidaId)
+        completas = ejecutarCount(query: completasQuery, proyectoId: proyectoId, partidaId: partidaId)
+        
+        var nuevoEstado = "NO INICIADA"
+        
+        if iniciadas == 0 {
+            nuevoEstado = "NO INICIADA"
+        } else if completas == total && total > 0 {
+            nuevoEstado = "TERMINADA"
+        } else {
+            nuevoEstado = "EN PROCESO"
+        }
+        
+        let updateSQL = """
+        UPDATE proyecto_partida
+        SET estado = ?
+        WHERE proyecto_id = ? AND partida_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        
+        if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_text(statement, 1, (nuevoEstado as NSString).utf8String, -1, nil)
+            sqlite3_bind_int(statement, 2, Int32(proyectoId))
+            sqlite3_bind_int(statement, 3, Int32(partidaId))
+            
+            _ = sqlite3_step(statement)
+        }
+        
+        sqlite3_finalize(statement)
+    }
+    
+    func ejecutarCount(query: String, proyectoId: Int, partidaId: Int) -> Int {
+        var statement: OpaquePointer?
+        var valor = 0
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_int(statement, 2, Int32(partidaId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                valor = Int(sqlite3_column_int(statement, 0))
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return valor
+    }
+    
+    
 }

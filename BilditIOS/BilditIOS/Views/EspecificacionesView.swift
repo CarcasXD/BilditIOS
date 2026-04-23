@@ -1,20 +1,22 @@
 //
-//  PartidasView.swift
+//  EspecificacionesView.swift
 //  BilditIOS
 //
-//  Created by Carlos Arìstides Rivas Calderòn on 21/4/26.
+//  Created by Carlos Arìstides Rivas Calderòn on 22/4/26.
 //
 
 import SwiftUI
 
-struct PartidasView: View {
+struct EspecificacionesView: View {
     
     var usuario: Usuario
     var proyecto: Proyecto
+    var partida: Partida
     
     @Environment(\.presentationMode) var presentationMode
     
-    @State private var partidas: [Partida] = []
+    @State private var descripciones: [Descripcion] = []
+    @State private var totalPartida: Double = 0
     @State private var mostrarMensaje = false
     @State private var mensaje = ""
     
@@ -27,8 +29,7 @@ struct PartidasView: View {
                 VStack(spacing: 0) {
                     backButtonView
                     encabezadoView
-                    tituloPartidasView
-                    listaPartidasView
+                    listaDescripcionesView
                     botonCerrarView
                     mensajeView
                     Spacer().frame(height: 30)
@@ -38,8 +39,8 @@ struct PartidasView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            DatabaseManager.shared.asegurarPartidasDeProyecto(proyectoId: proyecto.id)
-            cargarPartidas()
+            DatabaseManager.shared.asegurarDescripciones(proyectoId: proyecto.id, partidaId: partida.id)
+            cargarDescripciones()
         }
     }
     
@@ -79,31 +80,52 @@ struct PartidasView: View {
                 .foregroundColor(.black)
                 .multilineTextAlignment(.center)
             
-            Spacer().frame(height: 20)
+            Spacer().frame(height: 18)
+            
+            HStack {
+                Text(partida.nombre)
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.black)
+                
+                Spacer()
+                
+                Text("$\(formatearDinero(totalPartida))")
+                    .font(.system(size: 22, weight: .bold))
+                    .foregroundColor(.black)
+                    .underline()
+            }
+            
+            Spacer().frame(height: 18)
         }
     }
     
-    var tituloPartidasView: some View {
-        HStack {
-            Text("Partidas")
-                .font(.system(size: 24, weight: .bold))
-                .foregroundColor(.black)
-            Spacer()
-        }
-        .padding(.bottom, 14)
-    }
-    
-    var listaPartidasView: some View {
-        VStack(spacing: 12) {
-            ForEach(partidas) { partida in
+    var listaDescripcionesView: some View {
+        VStack(spacing: 14) {
+            ForEach(descripciones) { descripcion in
                 NavigationLink(
-                    destination: EspecificacionesView(
+                    destination: DetalleDescripcionView(
                         usuario: usuario,
                         proyecto: proyecto,
-                        partida: partida
+                        partida: partida,
+                        descripcion: descripcion
                     )
                 ) {
-                    PartidaCardView(partida: partida)
+                    HStack {
+                        Text(descripcion.nombre)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.black)
+                        
+                        Spacer()
+                        
+                        Text("$\(formatearDinero(descripcion.subtotal))")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.black)
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(width: 320, height: 54)
+                    .background(Color.white)
+                    .cornerRadius(12)
+                    .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
                 }
                 .buttonStyle(PlainButtonStyle())
             }
@@ -115,9 +137,9 @@ struct PartidasView: View {
             Spacer().frame(height: 28)
             
             Button(action: {
-                intentarCerrarProyecto()
+                cerrarPartidaActual()
             }) {
-                Text("Cerrar proyecto")
+                Text("Cerrar partida")
                     .font(.system(size: 20, weight: .bold))
                     .foregroundColor(.white)
                     .frame(width: 220, height: 48)
@@ -132,95 +154,49 @@ struct PartidasView: View {
             if mostrarMensaje {
                 Text(mensaje)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(mensaje == "Proyecto cerrado correctamente" ? .green : .red)
+                    .foregroundColor(mensaje == "Partida cerrada correctamente" ? .green : .red)
                     .padding(.top, 12)
             }
         }
     }
     
-    func cargarPartidas() {
-        partidas = DatabaseManager.shared.obtenerPartidasDeProyecto(proyectoId: proyecto.id)
-        print("Cantidad de partidas: \(partidas.count)")
+    func cargarDescripciones() {
+        descripciones = DatabaseManager.shared.obtenerDescripcionesDePartida(
+            proyectoId: proyecto.id,
+            partidaId: partida.id
+        )
+        
+        totalPartida = DatabaseManager.shared.obtenerTotalPartida(
+            proyectoId: proyecto.id,
+            partidaId: partida.id
+        )
     }
     
-    func intentarCerrarProyecto() {
-        let sePuedeCerrar = DatabaseManager.shared.todasLasPartidasTerminadas(proyectoId: proyecto.id)
+    func cerrarPartidaActual() {
+        let resultado = DatabaseManager.shared.cerrarPartida(
+            proyectoId: proyecto.id,
+            partidaId: partida.id
+        )
         
-        if sePuedeCerrar {
-            let resultado = DatabaseManager.shared.cerrarProyecto(proyectoId: proyecto.id)
+        if resultado {
+            mensaje = "Partida cerrada correctamente"
+            mostrarMensaje = true
             
-            if resultado {
-                mensaje = "Proyecto cerrado correctamente"
-                mostrarMensaje = true
-                
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            } else {
-                mensaje = "No se pudo cerrar el proyecto"
-                mostrarMensaje = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                presentationMode.wrappedValue.dismiss()
             }
         } else {
-            mensaje = "Todas las partidas deben estar terminadas"
+            mensaje = "No se pudo cerrar la partida"
             mostrarMensaje = true
         }
     }
-}
-
-struct PartidaCardView: View {
-    let partida: Partida
     
-    var body: some View {
-        HStack {
-            Text(partida.nombre)
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.black)
-            
-            Spacer()
-            
-            estadoIcono
-        }
-        .padding(.horizontal, 14)
-        .frame(width: 320, height: 54)
-        .background(Color.white)
-        .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-    }
-    
-    var estadoIcono: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 7)
-                .fill(colorEstado)
-                .frame(width: 24, height: 24)
-            
-            Image(systemName: iconoEstado)
-                .foregroundColor(.black)
-                .font(.system(size: 13, weight: .bold))
-        }
-    }
-    
-    var colorEstado: Color {
-        if partida.estado == "TERMINADA" {
-            return .green
-        } else if partida.estado == "EN PROCESO" {
-            return .yellow
-        } else {
-            return .red
-        }
-    }
-    
-    var iconoEstado: String {
-        if partida.estado == "TERMINADA" {
-            return "checkmark"
-        } else if partida.estado == "EN PROCESO" {
-            return "arrow.triangle.2.circlepath"
-        } else {
-            return "xmark"
-        }
+    func formatearDinero(_ valor: Double) -> String {
+        String(format: "%.0f", valor)
     }
 }
 
-struct PartidasView_Previews: PreviewProvider {
+struct EspecificacionesView_Previews: PreviewProvider {
     static var previews: some View {
         let usuarioPrueba = Usuario(
             id: 1,
@@ -240,8 +216,18 @@ struct PartidasView_Previews: PreviewProvider {
             usuarioId: 1
         )
         
+        let partidaPrueba = Partida(
+            id: 5,
+            nombre: "Acabados",
+            estado: "EN PROCESO"
+        )
+        
         NavigationView {
-            PartidasView(usuario: usuarioPrueba, proyecto: proyectoPrueba)
+            EspecificacionesView(
+                usuario: usuarioPrueba,
+                proyecto: proyectoPrueba,
+                partida: partidaPrueba
+            )
         }
     }
 }
