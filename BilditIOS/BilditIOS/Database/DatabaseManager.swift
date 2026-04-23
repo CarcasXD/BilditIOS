@@ -37,7 +37,7 @@ class DatabaseManager {
         let fileManager = FileManager.default
         let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
         let documentsURL = urls[0]
-        let dbURL = documentsURL.appendingPathComponent("bildit.sqlite")
+        let dbURL = documentsURL.appendingPathComponent("bildit_v2.sqlite")
         return dbURL.path
     }
     
