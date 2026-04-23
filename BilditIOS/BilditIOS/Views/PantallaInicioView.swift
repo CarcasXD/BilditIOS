@@ -115,12 +115,21 @@ struct ProyectoCardView: View {
                 Spacer()
             }
             
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                NavigationLink(destination: PartidasView(usuario: usuario, proyecto: proyecto)) {
+                    Text("Ver")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                        .frame(width: 80, height: 36)
+                        .background(Color.blue)
+                        .cornerRadius(10)
+                }
+                
                 NavigationLink(destination: NuevoProyectoView(usuario: usuario, proyectoEditar: proyecto)) {
                     Text("Editar")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 100, height: 36)
+                        .frame(width: 90, height: 36)
                         .background(Color.orange)
                         .cornerRadius(10)
                 }
@@ -131,7 +140,7 @@ struct ProyectoCardView: View {
                     Text("Eliminar")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
-                        .frame(width: 100, height: 36)
+                        .frame(width: 90, height: 36)
                         .background(Color.red)
                         .cornerRadius(10)
                 }

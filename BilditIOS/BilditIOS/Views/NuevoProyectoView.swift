@@ -49,6 +49,7 @@ struct NuevoProyectoView: View {
             
             ScrollView {
                 VStack(spacing: 0) {
+                    backButtonView
                     encabezadoView
                     infoProyectoView
                     infoClienteView
@@ -73,6 +74,24 @@ struct NuevoProyectoView: View {
     var fondoView: some View {
         Color(.systemGray6)
             .edgesIgnoringSafeArea(.all)
+    }
+    
+    var backButtonView:some View{
+        HStack{
+            Button(action:{
+                presentationMode.wrappedValue.dismiss()
+            }){
+                HStack(spacing: 4){
+                    Image(systemName: "chevron.left")
+                    Text("Back")
+                }
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(.black)
+            }
+            
+            Spacer()
+        }
+        .padding(.top, 20)
     }
     
     var encabezadoView: some View {
