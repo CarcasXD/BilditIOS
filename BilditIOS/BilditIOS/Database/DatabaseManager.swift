@@ -31,14 +31,21 @@ class DatabaseManager {
             
             asegurarPartidasDeProyecto(proyectoId: 1)
             asegurarPartidasDeProyecto(proyectoId: 2)
+            asegurarPartidasDeProyecto(proyectoId: 3)
+            asegurarPartidasDeProyecto(proyectoId: 4)
+
+            poblarProyectoListoParaCerrar(proyectoId: 3)
+            poblarProyectoConExtrasPendientes(proyectoId: 4)
     }
     
     func getDatabasePath() -> String {
         let fileManager = FileManager.default
         let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
         let documentsURL = urls[0]
-        let dbURL = documentsURL.appendingPathComponent("bildit_v2.sqlite")
+        let dbURL = documentsURL.appendingPathComponent("bildit_v4.sqlite")
+        print("Ruta BD: \(dbURL.path)")
         return dbURL.path
+        
     }
     
     func openDatabase() {
@@ -90,7 +97,8 @@ class DatabaseManager {
             nombre TEXT NOT NULL,
             ubicacion TEXT,
             estado TEXT DEFAULT 'ABIERTO',
-            usuario_id INTEGER NOT NULL
+            usuario_id INTEGER NOT NULL,
+            fecha_cierre TEXT DEFAULT ''
         );
         """
         
@@ -185,10 +193,12 @@ class DatabaseManager {
     
     func insertarProyectosPrueba() {
         let insertSQL = """
-        INSERT OR IGNORE INTO proyectos (id, nombre, ubicacion, estado, usuario_id)
+        INSERT OR IGNORE INTO proyectos (id, nombre, ubicacion, estado, usuario_id, fecha_cierre)
         VALUES
-        (1, 'Grupo Roble', 'Urbanizacion El Trebol, Pasaje Maquilishuat, #31', 'ABIERTO', 1),
-        (2, 'Grupo Carretera', 'Sonsonate', 'CERRADO', 1);
+        (1, 'Grupo Roble', 'Urbanizacion El Trebol, Pasaje Maquilishuat, #31', 'ABIERTO', 1, ''),
+        (2, 'Constructora Sinai', 'Quezaltepeque', 'CERRADO', 1, '26/04/2024'),
+        (3, 'Residencial Las Flores', 'Santa Ana', 'ABIERTO', 1, ''),
+        (4, 'Torre Empresarial Nova', 'San Salvador', 'ABIERTO', 1, '');
         """
         
         var statement: OpaquePointer?
@@ -331,8 +341,8 @@ class DatabaseManager {
     
     func insertarProyecto(nombre: String, ubicacion: String, usuarioId: Int) -> Bool {
         let insertSQL = """
-        INSERT INTO proyectos (nombre, ubicacion, estado, usuario_id)
-        VALUES (?, ?, 'ABIERTO', ?);
+        INSERT INTO proyectos (nombre, ubicacion, estado, usuario_id, fecha_cierre)
+        VALUES (?, ?, 'ABIERTO', ?, '');
         """
         
         var statement: OpaquePointer?
@@ -419,7 +429,7 @@ class DatabaseManager {
     
     func obtenerProyectosAbiertos(usuarioId: Int) -> [Proyecto] {
         let query = """
-        SELECT id, nombre, ubicacion, estado, usuario_id
+        SELECT id, nombre, ubicacion, estado, usuario_id, fecha_cierre
         FROM proyectos
         WHERE usuario_id = ? AND estado = 'ABIERTO';
         """
@@ -436,13 +446,15 @@ class DatabaseManager {
                 let ubicacion = sqlite3_column_text(statement, 2) != nil ? String(cString: sqlite3_column_text(statement, 2)) : ""
                 let estado = String(cString: sqlite3_column_text(statement, 3))
                 let usuarioIdDB = Int(sqlite3_column_int(statement, 4))
+                let fechaCierre = sqlite3_column_text(statement, 5) != nil ? String(cString: sqlite3_column_text(statement, 5)) : ""
                 
                 let proyecto = Proyecto(
                     id: id,
                     nombre: nombre,
                     ubicacion: ubicacion,
                     estado: estado,
-                    usuarioId: usuarioIdDB
+                    usuarioId: usuarioIdDB,
+                    fechaCierre: fechaCierre
                 )
                 
                 proyectos.append(proyecto)
@@ -457,7 +469,7 @@ class DatabaseManager {
     
     func obtenerProyectosCerrados(usuarioId: Int) -> [Proyecto] {
         let query = """
-        SELECT id, nombre, ubicacion, estado, usuario_id
+        SELECT id, nombre, ubicacion, estado, usuario_id, fecha_cierre
         FROM proyectos
         WHERE usuario_id = ? AND estado = 'CERRADO';
         """
@@ -474,13 +486,15 @@ class DatabaseManager {
                 let ubicacion = sqlite3_column_text(statement, 2) != nil ? String(cString: sqlite3_column_text(statement, 2)) : ""
                 let estado = String(cString: sqlite3_column_text(statement, 3))
                 let usuarioIdDB = Int(sqlite3_column_int(statement, 4))
+                let fechaCierre = sqlite3_column_text(statement, 5) != nil ? String(cString: sqlite3_column_text(statement, 5)) : ""
                 
                 let proyecto = Proyecto(
                     id: id,
                     nombre: nombre,
                     ubicacion: ubicacion,
                     estado: estado,
-                    usuarioId: usuarioIdDB
+                    usuarioId: usuarioIdDB,
+                    fechaCierre: fechaCierre
                 )
                 
                 proyectos.append(proyecto)
@@ -600,9 +614,11 @@ class DatabaseManager {
     }
     
     func cerrarProyecto(proyectoId: Int) -> Bool {
+        let fechaActual = fechaActualTexto()
+        
         let updateSQL = """
         UPDATE proyectos
-        SET estado = 'CERRADO'
+        SET estado = 'CERRADO', fecha_cierre = ?
         WHERE id = ?;
         """
         
@@ -610,7 +626,8 @@ class DatabaseManager {
         var resultado = false
         
         if sqlite3_prepare_v2(db, updateSQL, -1, &statement, nil) == SQLITE_OK {
-            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            sqlite3_bind_text(statement, 1, (fechaActual as NSString).utf8String, -1, nil)
+            sqlite3_bind_int(statement, 2, Int32(proyectoId))
             
             if sqlite3_step(statement) == SQLITE_DONE {
                 print("Proyecto cerrado correctamente")
@@ -623,6 +640,76 @@ class DatabaseManager {
         }
         
         sqlite3_finalize(statement)
+        return resultado
+    }
+    
+    func fechaActualTexto() -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd/MM/yyyy"
+        return formatter.string(from: Date())
+    }
+
+    func obtenerTotalProyecto(proyectoId: Int) -> Double {
+        let query = """
+        SELECT IFNULL(SUM(subtotal), 0)
+        FROM proyecto_descripcion
+        WHERE proyecto_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var total: Double = 0
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                total = sqlite3_column_double(statement, 0)
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return total
+    }
+
+    func obtenerProyectosCerradosResumen(usuarioId: Int) -> [ProyectoCerrado] {
+        let proyectos = obtenerProyectosCerrados(usuarioId: usuarioId)
+        var lista: [ProyectoCerrado] = []
+        
+        for proyecto in proyectos {
+            let total = obtenerTotalProyecto(proyectoId: proyecto.id)
+            
+            lista.append(
+                ProyectoCerrado(
+                    id: proyecto.id,
+                    nombre: proyecto.nombre,
+                    ubicacion: proyecto.ubicacion,
+                    fechaCierre: proyecto.fechaCierre,
+                    total: total
+                )
+            )
+        }
+        
+        return lista
+    }
+
+    func obtenerPartidasCerradasDetalle(proyectoId: Int) -> [PartidaCerradaDetalle] {
+        let partidas = obtenerPartidasDeProyecto(proyectoId: proyectoId)
+        var resultado: [PartidaCerradaDetalle] = []
+        
+        for partida in partidas {
+            let descripciones = obtenerDescripcionesDePartida(proyectoId: proyectoId, partidaId: partida.id)
+            let total = descripciones.reduce(0) { $0 + $1.subtotal }
+            
+            resultado.append(
+                PartidaCerradaDetalle(
+                    id: partida.id,
+                    nombre: partida.nombre,
+                    total: total,
+                    descripciones: descripciones
+                )
+            )
+        }
+        
         return resultado
     }
     
@@ -1233,5 +1320,188 @@ class DatabaseManager {
         return valor
     }
     
+    func proyectoYaTieneRecursos(proyectoId: Int) -> Bool {
+        let query = """
+        SELECT COUNT(*)
+        FROM descripcion_recurso dr
+        INNER JOIN proyecto_descripcion pd ON pd.id = dr.proyecto_descripcion_id
+        WHERE pd.proyecto_id = ?;
+        """
+        
+        var statement: OpaquePointer?
+        var cantidad = 0
+        
+        if sqlite3_prepare_v2(db, query, -1, &statement, nil) == SQLITE_OK {
+            sqlite3_bind_int(statement, 1, Int32(proyectoId))
+            
+            if sqlite3_step(statement) == SQLITE_ROW {
+                cantidad = Int(sqlite3_column_int(statement, 0))
+            }
+        }
+        
+        sqlite3_finalize(statement)
+        return cantidad > 0
+    }
     
+    func asegurarTodasLasDescripcionesDeProyecto(proyectoId: Int) {
+        let partidas = obtenerPartidasDeProyecto(proyectoId: proyectoId)
+        
+        for partida in partidas {
+            asegurarDescripciones(proyectoId: proyectoId, partidaId: partida.id)
+        }
+    }
+    
+    func llenarDescripcionDemo(
+        proyectoId: Int,
+        partidaId: Int,
+        descripcionId: Int,
+        cantidadTotal: Double,
+        recurso: String,
+        unidad: String,
+        cantidadPorUnidad: Double,
+        precioUnitario: Double
+    ) {
+        let _ = insertarRecurso(
+            proyectoId: proyectoId,
+            partidaId: partidaId,
+            descripcionId: descripcionId,
+            nombreRecurso: recurso,
+            unidad: unidad,
+            cantidadPorUnidad: cantidadPorUnidad,
+            precioUnitario: precioUnitario
+        )
+        
+        let _ = actualizarCantidadTotalDescripcion(
+            proyectoId: proyectoId,
+            partidaId: partidaId,
+            descripcionId: descripcionId,
+            cantidadTotal: cantidadTotal
+        )
+    }
+    
+    func poblarProyectoListoParaCerrar(proyectoId: Int) {
+        if proyectoYaTieneRecursos(proyectoId: proyectoId) { return }
+        
+        asegurarPartidasDeProyecto(proyectoId: proyectoId)
+        asegurarTodasLasDescripcionesDeProyecto(proyectoId: proyectoId)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 101, cantidadTotal: 10, recurso: "Mano de obra", unidad: "jornal", cantidadPorUnidad: 1, precioUnitario: 12)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 102, cantidadTotal: 8, recurso: "Cal", unidad: "bolsa", cantidadPorUnidad: 1, precioUnitario: 6)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 103, cantidadTotal: 12, recurso: "Excavadora", unidad: "hora", cantidadPorUnidad: 1, precioUnitario: 20)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 104, cantidadTotal: 9, recurso: "Material selecto", unidad: "m3", cantidadPorUnidad: 1, precioUnitario: 8)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 199, cantidadTotal: 2, recurso: "Extras tierras", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 15)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 201, cantidadTotal: 5, recurso: "Concreto", unidad: "m3", cantidadPorUnidad: 1, precioUnitario: 90)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 202, cantidadTotal: 4, recurso: "Hierro", unidad: "qq", cantidadPorUnidad: 1, precioUnitario: 35)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 203, cantidadTotal: 3, recurso: "Anclajes", unidad: "set", cantidadPorUnidad: 1, precioUnitario: 22)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 204, cantidadTotal: 6, recurso: "Losa base", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 40)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 299, cantidadTotal: 1, recurso: "Extras cimentacion", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 18)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 301, cantidadTotal: 7, recurso: "Columnas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 55)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 302, cantidadTotal: 7, recurso: "Vigas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 45)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 303, cantidadTotal: 7, recurso: "Losas", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 35)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 304, cantidadTotal: 2, recurso: "Escaleras", unidad: "tramo", cantidadPorUnidad: 1, precioUnitario: 80)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 399, cantidadTotal: 1, recurso: "Extras estructura", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 25)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 401, cantidadTotal: 10, recurso: "Bloques", unidad: "ciento", cantidadPorUnidad: 1, precioUnitario: 30)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 402, cantidadTotal: 8, recurso: "Tabiques", unidad: "ciento", cantidadPorUnidad: 1, precioUnitario: 28)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 403, cantidadTotal: 6, recurso: "Mortero", unidad: "m3", cantidadPorUnidad: 1, precioUnitario: 20)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 404, cantidadTotal: 5, recurso: "Repello", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 10)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 499, cantidadTotal: 1, recurso: "Extras albanileria", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 12)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 501, cantidadTotal: 3, recurso: "Ceramica", unidad: "caja", cantidadPorUnidad: 1, precioUnitario: 15)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 502, cantidadTotal: 2, recurso: "Pintura", unidad: "galon", cantidadPorUnidad: 1, precioUnitario: 20)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 503, cantidadTotal: 2, recurso: "Puertas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 80)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 504, cantidadTotal: 2, recurso: "Ventanas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 60)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 599, cantidadTotal: 1, recurso: "Extras acabados", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 25)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 601, cantidadTotal: 10, recurso: "Tuberia EMT", unidad: "barra", cantidadPorUnidad: 1, precioUnitario: 7)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 602, cantidadTotal: 8, recurso: "Cable", unidad: "rollo", cantidadPorUnidad: 1, precioUnitario: 18)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 603, cantidadTotal: 2, recurso: "Tableros", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 120)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 604, cantidadTotal: 10, recurso: "Luminarias", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 14)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 699, cantidadTotal: 1, recurso: "Extras electricas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 18)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 701, cantidadTotal: 10, recurso: "PVC", unidad: "barra", cantidadPorUnidad: 1, precioUnitario: 8)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 702, cantidadTotal: 4, recurso: "Lavabos", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 45)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 703, cantidadTotal: 4, recurso: "WC", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 65)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 704, cantidadTotal: 2, recurso: "Pruebas", unidad: "serv", cantidadPorUnidad: 1, precioUnitario: 30)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 799, cantidadTotal: 1, recurso: "Extras sanitarias", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 16)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 801, cantidadTotal: 6, recurso: "Adoquin", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 18)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 802, cantidadTotal: 5, recurso: "Jardineria", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 12)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 803, cantidadTotal: 3, recurso: "Muros", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 25)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 899, cantidadTotal: 1, recurso: "Extras urbanizacion", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 20)
+        
+        
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 9, descripcionId: 901, cantidadTotal: 1, recurso: "Extras generales", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 50)
+    }
+    
+    func poblarProyectoConExtrasPendientes(proyectoId: Int) {
+        if proyectoYaTieneRecursos(proyectoId: proyectoId) { return }
+        
+        asegurarPartidasDeProyecto(proyectoId: proyectoId)
+        asegurarTodasLasDescripcionesDeProyecto(proyectoId: proyectoId)
+        
+        // Se llenan TODAS menos las de Extras
+        
+        // Partida 1
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 101, cantidadTotal: 10, recurso: "Mano de obra", unidad: "jornal", cantidadPorUnidad: 1, precioUnitario: 12)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 102, cantidadTotal: 8, recurso: "Cal", unidad: "bolsa", cantidadPorUnidad: 1, precioUnitario: 6)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 103, cantidadTotal: 12, recurso: "Excavadora", unidad: "hora", cantidadPorUnidad: 1, precioUnitario: 20)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 1, descripcionId: 104, cantidadTotal: 9, recurso: "Material selecto", unidad: "m3", cantidadPorUnidad: 1, precioUnitario: 8)
+        
+        // Partida 2
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 201, cantidadTotal: 5, recurso: "Concreto", unidad: "m3", cantidadPorUnidad: 1, precioUnitario: 90)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 202, cantidadTotal: 4, recurso: "Hierro", unidad: "qq", cantidadPorUnidad: 1, precioUnitario: 35)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 203, cantidadTotal: 3, recurso: "Anclajes", unidad: "set", cantidadPorUnidad: 1, precioUnitario: 22)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 2, descripcionId: 204, cantidadTotal: 6, recurso: "Losa base", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 40)
+        
+        // Partida 3
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 301, cantidadTotal: 7, recurso: "Columnas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 55)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 302, cantidadTotal: 7, recurso: "Vigas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 45)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 303, cantidadTotal: 7, recurso: "Losas", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 35)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 3, descripcionId: 304, cantidadTotal: 2, recurso: "Escaleras", unidad: "tramo", cantidadPorUnidad: 1, precioUnitario: 80)
+        
+        // Partida 4
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 401, cantidadTotal: 10, recurso: "Bloques", unidad: "ciento", cantidadPorUnidad: 1, precioUnitario: 30)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 402, cantidadTotal: 8, recurso: "Tabiques", unidad: "ciento", cantidadPorUnidad: 1, precioUnitario: 28)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 403, cantidadTotal: 6, recurso: "Mortero", unidad: "m3", cantidadPorUnidad: 1, precioUnitario: 20)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 4, descripcionId: 404, cantidadTotal: 5, recurso: "Repello", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 10)
+        
+        // Partida 5
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 501, cantidadTotal: 3, recurso: "Ceramica", unidad: "caja", cantidadPorUnidad: 1, precioUnitario: 15)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 502, cantidadTotal: 2, recurso: "Pintura", unidad: "galon", cantidadPorUnidad: 1, precioUnitario: 20)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 503, cantidadTotal: 2, recurso: "Puertas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 80)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 5, descripcionId: 504, cantidadTotal: 2, recurso: "Ventanas", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 60)
+        
+        // Partida 6
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 601, cantidadTotal: 10, recurso: "Tuberia EMT", unidad: "barra", cantidadPorUnidad: 1, precioUnitario: 7)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 602, cantidadTotal: 8, recurso: "Cable", unidad: "rollo", cantidadPorUnidad: 1, precioUnitario: 18)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 603, cantidadTotal: 2, recurso: "Tableros", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 120)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 6, descripcionId: 604, cantidadTotal: 10, recurso: "Luminarias", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 14)
+        
+        // Partida 7
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 701, cantidadTotal: 10, recurso: "PVC", unidad: "barra", cantidadPorUnidad: 1, precioUnitario: 8)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 702, cantidadTotal: 4, recurso: "Lavabos", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 45)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 703, cantidadTotal: 4, recurso: "WC", unidad: "unid", cantidadPorUnidad: 1, precioUnitario: 65)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 7, descripcionId: 704, cantidadTotal: 2, recurso: "Pruebas", unidad: "serv", cantidadPorUnidad: 1, precioUnitario: 30)
+        
+        // Partida 8
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 801, cantidadTotal: 6, recurso: "Adoquin", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 18)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 802, cantidadTotal: 5, recurso: "Jardineria", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 12)
+        llenarDescripcionDemo(proyectoId: proyectoId, partidaId: 8, descripcionId: 803, cantidadTotal: 3, recurso: "Muros", unidad: "m2", cantidadPorUnidad: 1, precioUnitario: 25)
+        
+        // Nota:
+        // NO llenamos:
+        // 199, 299, 399, 499, 599, 699, 799, 899 y 901
+        // para que tú completes Extras
+    }
 }

@@ -1,0 +1,16 @@
+//
+//  ProyectoCerrado.swift
+//  BilditIOS
+//
+//  Created by Carlos Arìstides Rivas Calderòn on 23/4/26.
+//
+
+import Foundation
+
+struct ProyectoCerrado: Identifiable {
+    var id: Int
+    var nombre: String
+    var ubicacion: String
+    var fechaCierre: String
+    var total: Double
+}

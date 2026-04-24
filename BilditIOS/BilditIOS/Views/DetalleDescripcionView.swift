@@ -262,7 +262,8 @@ struct DetalleDescripcionView_Previews: PreviewProvider {
             nombre: "Grupo Roble",
             ubicacion: "Urbanizacion El Trebol, Pasaje Maquilishuat, #31",
             estado: "ABIERTO",
-            usuarioId: 1
+            usuarioId: 1,
+            fechaCierre: ""
         )
         
         let partidaPrueba = Partida(id: 5, nombre: "Acabados", estado: "EN PROCESO")

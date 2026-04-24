@@ -57,9 +57,7 @@ struct PantallaInicioView: View {
                     .cornerRadius(12)
             }
             
-            Button(action: {
-                print("Proyectos cerrados")
-            }) {
+            NavigationLink(destination: ProyectosCerradosView(usuario: usuario)) {
                 Text("Proyectos cerrados")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
