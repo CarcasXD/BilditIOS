@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6E0873CF2F9BEC8E00A24B37 /* PDFGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0873CE2F9BEC8E00A24B37 /* PDFGenerator.swift */; };
+		6E0873D12F9BF08700A24B37 /* PDFPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E0873D02F9BF08700A24B37 /* PDFPreviewView.swift */; };
 		6E3551422F95A7E500FBDA02 /* BilditIOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3551412F95A7E500FBDA02 /* BilditIOSApp.swift */; };
 		6E3551442F95A7E500FBDA02 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6E3551432F95A7E500FBDA02 /* ContentView.swift */; };
 		6E3551462F95A7E700FBDA02 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6E3551452F95A7E700FBDA02 /* Assets.xcassets */; };
@@ -52,6 +54,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		6E0873CE2F9BEC8E00A24B37 /* PDFGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFGenerator.swift; sourceTree = "<group>"; };
+		6E0873D02F9BF08700A24B37 /* PDFPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PDFPreviewView.swift; sourceTree = "<group>"; };
 		6E35513E2F95A7E500FBDA02 /* BilditIOS.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BilditIOS.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6E3551412F95A7E500FBDA02 /* BilditIOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BilditIOSApp.swift; sourceTree = "<group>"; };
 		6E3551432F95A7E500FBDA02 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
@@ -189,6 +193,7 @@
 				6E39EDCE2F99FF6600DA2AAC /* AgregarRecursoView.swift */,
 				6EED8AB32F9B3EE2008D8B44 /* ProyectosCerradosView.swift */,
 				6EED8AB52F9B3F02008D8B44 /* DetalleProyectoCerradoView.swift */,
+				6E0873D02F9BF08700A24B37 /* PDFPreviewView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -232,6 +237,7 @@
 		6E3551742F95AA5200FBDA02 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				6E0873CE2F9BEC8E00A24B37 /* PDFGenerator.swift */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -379,11 +385,13 @@
 				6E39EDCD2F99FF4500DA2AAC /* DetalleDescripcionView.swift in Sources */,
 				6E721E662F989B0E0017FF17 /* Partida.swift in Sources */,
 				6E5BB0902F95DA0400F0F5A6 /* LoginView.swift in Sources */,
+				6E0873D12F9BF08700A24B37 /* PDFPreviewView.swift in Sources */,
 				6EED8AB42F9B3EE2008D8B44 /* ProyectosCerradosView.swift in Sources */,
 				6E3551442F95A7E500FBDA02 /* ContentView.swift in Sources */,
 				6EED8AB62F9B3F02008D8B44 /* DetalleProyectoCerradoView.swift in Sources */,
 				6E39EDC72F99F42100DA2AAC /* Descripcion.swift in Sources */,
 				6E721E642F989A780017FF17 /* PartidasView.swift in Sources */,
+				6E0873CF2F9BEC8E00A24B37 /* PDFGenerator.swift in Sources */,
 				6EE9DC562F9745DA00FD31DF /* Usuario.swift in Sources */,
 				6EE9DC542F96CB2900FD31DF /* DatabaseManager.swift in Sources */,
 				6E39EDCF2F99FF6600DA2AAC /* AgregarRecursoView.swift in Sources */,

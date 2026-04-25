@@ -13,11 +13,11 @@ struct EspecificacionesView: View {
     var proyecto: Proyecto
     var partida: Partida
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) var present_mode
     
     @State private var descripciones: [Descripcion] = []
     @State private var totalPartida: Double = 0
-    @State private var mostrarMensaje = false
+    @State private var mostrar_msj = false
     @State private var mensaje = ""
     
     var body: some View {
@@ -47,7 +47,7 @@ struct EspecificacionesView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -151,7 +151,7 @@ struct EspecificacionesView: View {
     
     var mensajeView: some View {
         VStack(spacing: 0) {
-            if mostrarMensaje {
+            if mostrar_msj {
                 Text(mensaje)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(mensaje == "Partida cerrada correctamente" ? .green : .red)
@@ -160,6 +160,17 @@ struct EspecificacionesView: View {
         }
     }
     
+    
+    /*
+     * Entradas: proyecto.id, partida.id
+     * Salida: carga las descripciones de la partida y el total correspondiente
+     * Valor de retorno: ninguno
+     * Función: consultar descripciones y total monetario de una partida
+     * Variables: descripciones, totalPartida
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: asegurarDescripciones(), obtenerDescripcionesDePartida(), obtenerTotalPartida()
+     */
     func cargarDescripciones() {
         descripciones = DatabaseManager.shared.obtenerDescripcionesDePartida(
             proyectoId: proyecto.id,
@@ -172,6 +183,16 @@ struct EspecificacionesView: View {
         )
     }
     
+    /*
+     * Entradas: proyecto.id, partida.id
+     * Salida: cierra la partida actual si cumple las condiciones definidas
+     * Valor de retorno: ninguno
+     * Función: marcar una partida como terminada
+     * Variables: resultado, mensaje, mostrar_msj
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: cerrarPartida()
+     */
     func cerrarPartidaActual() {
         let resultado = DatabaseManager.shared.cerrarPartida(
             proyectoId: proyecto.id,
@@ -180,14 +201,14 @@ struct EspecificacionesView: View {
         
         if resultado {
             mensaje = "Partida cerrada correctamente"
-            mostrarMensaje = true
+            mostrar_msj = true
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }
         } else {
             mensaje = "No se pudo cerrar la partida"
-            mostrarMensaje = true
+            mostrar_msj = true
         }
     }
     
@@ -198,7 +219,7 @@ struct EspecificacionesView: View {
 
 struct EspecificacionesView_Previews: PreviewProvider {
     static var previews: some View {
-        let usuarioPrueba = Usuario(
+        let usr_prueba = Usuario(
             id: 1,
             usuario: "carcas",
             nombre: "Carlos",
@@ -208,16 +229,16 @@ struct EspecificacionesView_Previews: PreviewProvider {
             ocupacion: "Ingeniero"
         )
         
-        let proyectoPrueba = Proyecto(
+        let proy_prueba = Proyecto(
             id: 1,
             nombre: "Grupo Roble",
             ubicacion: "Urbanizacion El Trebol, Pasaje Maquilishuat, #31",
             estado: "ABIERTO",
             usuarioId: 1,
-            fechaCierre: ""
+            fecha_cierre: ""
         )
         
-        let partidaPrueba = Partida(
+        let partida_prueba = Partida(
             id: 5,
             nombre: "Acabados",
             estado: "EN PROCESO"
@@ -225,9 +246,9 @@ struct EspecificacionesView_Previews: PreviewProvider {
         
         NavigationView {
             EspecificacionesView(
-                usuario: usuarioPrueba,
-                proyecto: proyectoPrueba,
-                partida: partidaPrueba
+                usuario: usr_prueba,
+                proyecto: proy_prueba,
+                partida: partida_prueba
             )
         }
     }

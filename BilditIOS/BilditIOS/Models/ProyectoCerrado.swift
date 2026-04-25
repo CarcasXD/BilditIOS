@@ -11,6 +11,6 @@ struct ProyectoCerrado: Identifiable {
     var id: Int
     var nombre: String
     var ubicacion: String
-    var fechaCierre: String
+    var fecha_cierre: String
     var total: Double
 }

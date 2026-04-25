@@ -12,10 +12,10 @@ struct PartidasView: View {
     var usuario: Usuario
     var proyecto: Proyecto
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) var present_mode
     
     @State private var partidas: [Partida] = []
-    @State private var mostrarMensaje = false
+    @State private var mostrar_msj = false
     @State private var mensaje = ""
     
     var body: some View {
@@ -38,7 +38,7 @@ struct PartidasView: View {
         }
         .navigationBarHidden(true)
         .onAppear {
-            DatabaseManager.shared.asegurarPartidasDeProyecto(proyectoId: proyecto.id)
+            DatabaseManager.shared.asegurarPartidas(proyectoId: proyecto.id)
             cargarPartidas()
         }
     }
@@ -46,7 +46,7 @@ struct PartidasView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -129,7 +129,7 @@ struct PartidasView: View {
     
     var mensajeView: some View {
         VStack(spacing: 0) {
-            if mostrarMensaje {
+            if mostrar_msj {
                 Text(mensaje)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(mensaje == "Proyecto cerrado correctamente" ? .green : .red)
@@ -138,31 +138,53 @@ struct PartidasView: View {
         }
     }
     
+    
+    /*
+     * Entradas: proyecto.id
+     * Salida: muestra las partidas asociadas al proyecto actual
+     * Valor de retorno: ninguno
+     * Función: cargar partidas del proyecto desde la base de datos
+     * Variables: partidas
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: asegurarPartidasDeProyecto(), obtenerPartidasDeProyecto()
+     */
     func cargarPartidas() {
-        partidas = DatabaseManager.shared.obtenerPartidasDeProyecto(proyectoId: proyecto.id)
+        partidas = DatabaseManager.shared.obtenerPartidas(proyectoId: proyecto.id)
         print("Cantidad de partidas: \(partidas.count)")
     }
     
+    
+    /*
+     * Entradas: proyecto.id
+     * Salida: intenta cerrar el proyecto si todas sus partidas están terminadas
+     * Valor de retorno: ninguno
+     * Función: validar el cierre de un proyecto según el estado de sus partidas
+     * Variables: sePuedeCerrar, resultado, mensaje, mostrar_msj
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: todasLasPartidasTerminadas(), cerrarProyecto()
+     */
     func intentarCerrarProyecto() {
-        let sePuedeCerrar = DatabaseManager.shared.todasLasPartidasTerminadas(proyectoId: proyecto.id)
+        let sePuedeCerrar = DatabaseManager.shared.partidasTerminadas(proyectoId: proyecto.id)
         
         if sePuedeCerrar {
             let resultado = DatabaseManager.shared.cerrarProyecto(proyectoId: proyecto.id)
             
             if resultado {
                 mensaje = "Proyecto cerrado correctamente"
-                mostrarMensaje = true
+                mostrar_msj = true
                 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                    presentationMode.wrappedValue.dismiss()
+                    present_mode.wrappedValue.dismiss()
                 }
             } else {
                 mensaje = "No se pudo cerrar el proyecto"
-                mostrarMensaje = true
+                mostrar_msj = true
             }
         } else {
             mensaje = "Todas las partidas deben estar terminadas"
-            mostrarMensaje = true
+            mostrar_msj = true
         }
     }
 }
@@ -222,7 +244,7 @@ struct PartidaCardView: View {
 
 struct PartidasView_Previews: PreviewProvider {
     static var previews: some View {
-        let usuarioPrueba = Usuario(
+        let usr_prueba = Usuario(
             id: 1,
             usuario: "carcas",
             nombre: "Carlos",
@@ -232,17 +254,17 @@ struct PartidasView_Previews: PreviewProvider {
             ocupacion: "Ingeniero"
         )
         
-        let proyectoPrueba = Proyecto(
+        let proy_prueba = Proyecto(
             id: 1,
             nombre: "Grupo Roble",
             ubicacion: "Urbanizacion El Trebol, Pasaje Maquilishuat, #31",
             estado: "ABIERTO",
             usuarioId: 1,
-            fechaCierre: ""
+            fecha_cierre: ""
         )
         
         NavigationView {
-            PartidasView(usuario: usuarioPrueba, proyecto: proyectoPrueba)
+            PartidasView(usuario: usr_prueba, proyecto: proy_prueba)
         }
     }
 }

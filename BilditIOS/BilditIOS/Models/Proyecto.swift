@@ -13,5 +13,5 @@ struct Proyecto: Identifiable {
     var ubicacion: String
     var estado: String
     var usuarioId: Int
-    var fechaCierre: String = ""
+    var fecha_cierre: String = ""
 }

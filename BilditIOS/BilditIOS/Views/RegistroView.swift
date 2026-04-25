@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RegistroView: View {
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) var present_mode
     @State var usuario = ""
     @State var contrasena = ""
     @State var nombre = ""
@@ -17,7 +17,7 @@ struct RegistroView: View {
     @State var correo = ""
     @State var telefono = ""
     @State var ocupacion = "Ingeniero"
-    @State var mostrarMensaje = false
+    @State var mostrar_msj = false
     @State var mensaje = ""
     
     var body: some View {
@@ -141,7 +141,7 @@ struct RegistroView: View {
                     .background(Color(red: 0.05, green: 0.62, blue: 0.67))
                     .cornerRadius(14)
             }
-            if mostrarMensaje {
+            if mostrar_msj {
                 Text(mensaje)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(mensaje == "Usuario guardado correctamente" ? .green : .red)
@@ -189,34 +189,45 @@ struct RegistroView: View {
         }
     }
     
+    
+    /*
+     * Entradas: usuario, contrasena, nombre, apellido, correo, telefono, ocupacion
+     * Salida: registra un nuevo usuario en la base de datos y muestra mensajes de éxito o error
+     * Valor de retorno: ninguno
+     * Función: guardar un nuevo usuario desde la pantalla de registro
+     * Variables: resultado, mensaje, mostrar_msj
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: soloLetras(), correoValido(), telefonoValido(), insertarUsuario()
+     */
     func guardarUsuario() {
         if usuario.isEmpty || contrasena.isEmpty || nombre.isEmpty || apellido.isEmpty {
             mensaje = "Completa los campos obligatorios"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
         if !soloLetras(nombre) {
             mensaje = "El nombre solo debe contener letras"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
         if !soloLetras(apellido) {
             mensaje = "El apellido solo debe contener letras"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
         if !correo.isEmpty && !correoValido(correo) {
             mensaje = "Correo invalido"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
         if !telefono.isEmpty && !telefonoValido(telefono) {
             mensaje = "Telefono invalido. Usa 0000-0000"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
@@ -232,7 +243,7 @@ struct RegistroView: View {
         
         if resultado {
             mensaje = "Usuario guardado correctamente"
-            mostrarMensaje = true
+            mostrar_msj = true
             
             usuario = ""
             contrasena = ""
@@ -243,25 +254,56 @@ struct RegistroView: View {
             ocupacion = "Ingeniero"
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }
         } else {
             mensaje = "No se pudo guardar el usuario"
-            mostrarMensaje = true
+            mostrar_msj = true
         }
     }
+    
+    /*
+     * Entradas: texto
+     * Salida: indica si el contenido contiene únicamente letras y espacios
+     * Valor de retorno: Bool
+     * Función: validar campos de nombre y apellido
+     * Variables: patron, predicado
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: NSPredicate()
+     */
     func soloLetras(_ texto: String) -> Bool {
         let patron = "^[A-Za-zÁÉÍÓÚáéíóúÑñ ]+$"
         let predicado = NSPredicate(format: "SELF MATCHES %@", patron)
         return predicado.evaluate(with: texto)
     }
 
+    /*
+     * Entradas: texto
+     * Salida: verifica si el correo cumple con una estructura válida
+     * Valor de retorno: Bool
+     * Función: validar correo electrónico del usuario
+     * Variables: patron, predicado
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: NSPredicate()
+     */
     func correoValido(_ texto: String) -> Bool {
         let patron = "^[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$"
         let predicado = NSPredicate(format: "SELF MATCHES %@", patron)
         return predicado.evaluate(with: texto)
     }
 
+    /*
+     * Entradas: texto
+     * Salida: verifica si el teléfono cumple el formato 0000-0000
+     * Valor de retorno: Bool
+     * Función: validar número telefónico ingresado en el registro
+     * Variables: patron, predicado
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: NSPredicate()
+     */
     func telefonoValido(_ texto: String) -> Bool {
         let patron = "^[0-9]{4}-[0-9]{4}$"
         let predicado = NSPredicate(format: "SELF MATCHES %@", patron)

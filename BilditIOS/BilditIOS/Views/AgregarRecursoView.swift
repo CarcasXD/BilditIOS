@@ -14,13 +14,13 @@ struct AgregarRecursoView: View {
     var partida: Partida
     var descripcion: Descripcion
     
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) var present_mode
     
-    @State private var nombreRecurso = ""
+    @State private var nom_recurso = ""
     @State private var unidad = ""
-    @State private var cantidadXUnidad = ""
-    @State private var precioUnitario = ""
-    @State private var mostrarMensaje = false
+    @State private var cant_x_unid = ""
+    @State private var precio_unit = ""
+    @State private var mostrar_msj = false
     @State private var mensaje = ""
     
     var body: some View {
@@ -46,7 +46,7 @@ struct AgregarRecursoView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -95,10 +95,10 @@ struct AgregarRecursoView: View {
     
     var formularioView: some View {
         VStack(spacing: 18) {
-            campoFormulario("Recurso", text: $nombreRecurso)
+            campoFormulario("Recurso", text: $nom_recurso)
             campoFormulario("Unidad", text: $unidad)
-            campoFormulario("Cantidad X Unidad", text: $cantidadXUnidad)
-            campoFormulario("Precio unitario", text: $precioUnitario)
+            campoFormulario("Cantidad X Unidad", text: $cant_x_unid)
+            campoFormulario("Precio unitario", text: $precio_unit)
         }
     }
     
@@ -121,7 +121,7 @@ struct AgregarRecursoView: View {
     
     var mensajeView: some View {
         VStack(spacing: 0) {
-            if mostrarMensaje {
+            if mostrar_msj {
                 Text(mensaje)
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(mensaje == "Recurso agregado correctamente" ? .green : .red)
@@ -148,23 +148,34 @@ struct AgregarRecursoView: View {
         }
     }
     
+    
+    /*
+     * Entradas: nom_recurso, unidad, cant_x_unid, precio_unit, proyecto.id, partida.id, descripcion.id
+     * Salida: inserta un recurso y actualiza subtotales y estados
+     * Valor de retorno: ninguno
+     * Función: registrar un nuevo recurso dentro del detalle de una descripción
+     * Variables: cantidad, precio, resultado, mensaje, mostrar_msj
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: insertarRecurso()
+     */
     func agregarRecurso() {
-        if nombreRecurso.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+        if nom_recurso.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
             unidad.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-            cantidadXUnidad.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-            precioUnitario.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            cant_x_unid.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+            precio_unit.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             
             mensaje = "Completa todos los campos"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
-        let cantidad = Double(cantidadXUnidad.replacingOccurrences(of: ",", with: ".")) ?? 0
-        let precio = Double(precioUnitario.replacingOccurrences(of: ",", with: ".")) ?? 0
+        let cantidad = Double(cant_x_unid.replacingOccurrences(of: ",", with: ".")) ?? 0
+        let precio = Double(precio_unit.replacingOccurrences(of: ",", with: ".")) ?? 0
         
         if cantidad <= 0 || precio <= 0 {
             mensaje = "Cantidad y precio deben ser mayores a 0"
-            mostrarMensaje = true
+            mostrar_msj = true
             return
         }
         
@@ -172,29 +183,29 @@ struct AgregarRecursoView: View {
             proyectoId: proyecto.id,
             partidaId: partida.id,
             descripcionId: descripcion.id,
-            nombreRecurso: nombreRecurso,
+            nom_recurso: nom_recurso,
             unidad: unidad,
-            cantidadPorUnidad: cantidad,
-            precioUnitario: precio
+            cant_unidad: cantidad,
+            precio_unit: precio
         )
         
         if resultado {
             mensaje = "Recurso agregado correctamente"
-            mostrarMensaje = true
+            mostrar_msj = true
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }
         } else {
             mensaje = "No se pudo agregar el recurso"
-            mostrarMensaje = true
+            mostrar_msj = true
         }
     }
 }
 
 struct AgregarRecursoView_Previews: PreviewProvider {
     static var previews: some View {
-        let usuarioPrueba = Usuario(
+        let usr_prueba = Usuario(
             id: 1,
             usuario: "carcas",
             nombre: "Carlos",
@@ -204,24 +215,24 @@ struct AgregarRecursoView_Previews: PreviewProvider {
             ocupacion: "Ingeniero"
         )
         
-        let proyectoPrueba = Proyecto(
+        let proy_prueba = Proyecto(
             id: 1,
             nombre: "Grupo Roble",
             ubicacion: "Urbanizacion El Trebol, Pasaje Maquilishuat, #31",
             estado: "ABIERTO",
             usuarioId: 1,
-            fechaCierre: ""
+            fecha_cierre: ""
         )
         
-        let partidaPrueba = Partida(id: 5, nombre: "Acabados", estado: "EN PROCESO")
-        let descripcionPrueba = Descripcion(id: 501, nombre: "Pisos", subtotal: 0)
+        let partida_prueba = Partida(id: 5, nombre: "Acabados", estado: "EN PROCESO")
+        let desc_prueba = Descripcion(id: 501, nombre: "Pisos", subtotal: 0)
         
         NavigationView {
             AgregarRecursoView(
-                usuario: usuarioPrueba,
-                proyecto: proyectoPrueba,
-                partida: partidaPrueba,
-                descripcion: descripcionPrueba
+                usuario: usr_prueba,
+                proyecto: proy_prueba,
+                partida: partida_prueba,
+                descripcion: desc_prueba
             )
         }
     }

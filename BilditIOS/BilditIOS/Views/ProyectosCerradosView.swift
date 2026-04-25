@@ -10,7 +10,7 @@ import SwiftUI
 struct ProyectosCerradosView: View {
     
     var usuario: Usuario
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.presentationMode) var present_mode
     
     @State private var proyectos: [ProyectoCerrado] = []
     
@@ -39,7 +39,7 @@ struct ProyectosCerradosView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -96,7 +96,7 @@ struct ProyectosCerradosView: View {
             Spacer().frame(height: 24)
             
             Button(action: {
-                presentationMode.wrappedValue.dismiss()
+                present_mode.wrappedValue.dismiss()
             }) {
                 Text("Cerrar")
                     .font(.system(size: 18, weight: .bold))
@@ -108,8 +108,19 @@ struct ProyectosCerradosView: View {
         }
     }
     
+    
+    /*
+     * Entradas: usuario.id
+     * Salida: carga la lista de proyectos cerrados del usuario
+     * Valor de retorno: ninguno
+     * Función: consultar el historial de proyectos cerrados
+     * Variables: proyectos
+     * Fecha: 25-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: obtenerCerradosRes()
+     */
     func cargarProyectos() {
-        proyectos = DatabaseManager.shared.obtenerProyectosCerradosResumen(usuarioId: usuario.id)
+        proyectos = DatabaseManager.shared.obtenerCerradosRes(usuarioId: usuario.id)
     }
 }
 
@@ -123,7 +134,7 @@ struct ProyectoCerradoCardView: View {
                 .foregroundColor(.black)
             
             HStack {
-                Text("Fecha de finalización: \(proyecto.fechaCierre)")
+                Text("Fecha de finalización: \(proyecto.fecha_cierre)")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.black)
                 
@@ -151,7 +162,7 @@ struct ProyectoCerradoCardView: View {
 
 struct ProyectosCerradosView_Previews: PreviewProvider {
     static var previews: some View {
-        let usuarioPrueba = Usuario(
+        let usr_prueba = Usuario(
             id: 1,
             usuario: "carcas",
             nombre: "Carlos",
@@ -162,7 +173,7 @@ struct ProyectosCerradosView_Previews: PreviewProvider {
         )
         
         NavigationView {
-            ProyectosCerradosView(usuario: usuarioPrueba)
+            ProyectosCerradosView(usuario: usr_prueba)
         }
     }
 }

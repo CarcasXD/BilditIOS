@@ -9,12 +9,12 @@ import Foundation
 
 struct Recurso: Identifiable {
     var id: Int
-    var nombreRecurso: String
+    var nom_recurso: String
     var unidad: String
-    var cantidadPorUnidad: Double
-    var precioUnitario: Double
+    var cant_unidad: Double
+    var precio_unit: Double
     
     var subtotal: Double {
-        cantidadPorUnidad * precioUnitario
+        cant_unidad * precio_unit
     }
 }

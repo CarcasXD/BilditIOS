@@ -9,11 +9,11 @@ import SwiftUI
 
 struct LoginView: View {
     
-    @State private var usuarioLogueado: Usuario? = nil
+    @State private var usr_logueado: Usuario? = nil
     @State private var usuario: String = ""
     @State private var contrasena: String = ""
     @State private var irAPantallaInicio = false
-    @State private var mostrarError = false
+    @State private var mostrar_err = false
     
     var body: some View {
         ZStack {
@@ -117,7 +117,7 @@ struct LoginView: View {
     
     var errorView: some View {
         VStack(spacing: 0) {
-            if mostrarError {
+            if mostrar_err {
                 Text("Usuario o contrasena incorrectos")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.red)
@@ -158,6 +158,17 @@ struct LoginView: View {
             .frame(height: 30)
     }
     
+    /*
+     * Entradas: usuario, contrasena
+     * Salida: valida credenciales y navega a la pantalla principal si son correctas
+     * Valor de retorno: ninguno
+     * Función: iniciar sesión del usuario en la aplicación
+     * Variables: resultado, usr_logueado, mostrar_err, irAPantallaInicio
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: validarLogin(), destinoPantallaInicio()
+     */
+    
     func iniciarSesion() {
         let resultado = DatabaseManager.shared.validarLogin(
             usuario: usuario,
@@ -165,16 +176,27 @@ struct LoginView: View {
         )
         
         if let usuarioValido = resultado {
-            usuarioLogueado = usuarioValido
-            mostrarError = false
+            usr_logueado = usuarioValido
+            mostrar_err = false
             irAPantallaInicio = true
         } else {
-            mostrarError = true
+            mostrar_err = true
         }
     }
     
+    
+    /*
+     * Entradas: usr_logueado
+     * Salida: devuelve la vista de destino después del inicio de sesión
+     * Valor de retorno: some View
+     * Función: determinar la pantalla a mostrar después de autenticar al usuario
+     * Variables: usuarioValido
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: PantallaInicioView()
+     */
     func destinoPantallaInicio() -> some View {
-        if let usuarioValido = usuarioLogueado {
+        if let usuarioValido = usr_logueado {
             return AnyView(PantallaInicioView(usuario: usuarioValido))
         } else {
             return AnyView(Text("Error al cargar usuario"))

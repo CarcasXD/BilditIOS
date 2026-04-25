@@ -48,7 +48,7 @@ struct PantallaInicioView: View {
     
     var botonesView: some View {
         HStack(spacing: 12) {
-            NavigationLink(destination: NuevoProyectoView(usuario: usuario, proyectoEditar: nil)) {
+            NavigationLink(destination: NuevoProyectoView(usuario: usuario, proy_editar: nil)) {
                 Text("Nuevo proyecto")
                     .font(.system(size: 14, weight: .bold))
                     .foregroundColor(.white)
@@ -84,10 +84,30 @@ struct PantallaInicioView: View {
         }
     }
     
+    /*
+     * Entradas: usuario.id
+     * Salida: carga en pantalla los proyectos abiertos del usuario autenticado
+     * Valor de retorno: ninguno
+     * Función: consultar y actualizar la lista de proyectos abiertos
+     * Variables: proyectos
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: obtener_abiertos()
+     */
     func cargarProyectos() {
-        proyectos = DatabaseManager.shared.obtenerProyectosAbiertos(usuarioId: usuario.id)
+        proyectos = DatabaseManager.shared.obtener_abiertos(usuarioId: usuario.id)
     }
     
+    /*
+     * Entradas: proyecto
+     * Salida: elimina el proyecto seleccionado y refresca la lista visible
+     * Valor de retorno: ninguno
+     * Función: borrar un proyecto desde la pantalla de inicio
+     * Variables: resultado
+     * Fecha: 24-04-2026
+     * Autor: Carlos Arístides Rivas Calderón
+     * Rutinas anexas: eliminarProyecto(), cargarProyectos()
+     */
     func borrarProyecto(_ proyecto: Proyecto) {
         let resultado = DatabaseManager.shared.eliminarProyecto(id: proyecto.id)
         
@@ -123,7 +143,7 @@ struct ProyectoCardView: View {
                         .cornerRadius(10)
                 }
                 
-                NavigationLink(destination: NuevoProyectoView(usuario: usuario, proyectoEditar: proyecto)) {
+                NavigationLink(destination: NuevoProyectoView(usuario: usuario, proy_editar: proyecto)) {
                     Text("Editar")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundColor(.white)
@@ -154,7 +174,7 @@ struct ProyectoCardView: View {
 
 struct PantallaInicioView_Previews: PreviewProvider {
     static var previews: some View {
-        let usuarioPrueba = Usuario(
+        let usr_prueba = Usuario(
             id: 1,
             usuario: "carcas",
             nombre: "Carlos",
@@ -165,7 +185,7 @@ struct PantallaInicioView_Previews: PreviewProvider {
         )
         
         NavigationView {
-            PantallaInicioView(usuario: usuarioPrueba)
+            PantallaInicioView(usuario: usr_prueba)
         }
     }
 }
