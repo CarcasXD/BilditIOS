@@ -14,7 +14,7 @@ struct DetalleDescripcionView: View {
     var partida: Partida
     var descripcion: Descripcion
     
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     
     @State private var recursos: [Recurso] = []
     @State private var cant_total_txt = ""
@@ -50,7 +50,7 @@ struct DetalleDescripcionView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")

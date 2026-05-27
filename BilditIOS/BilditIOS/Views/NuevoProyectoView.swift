@@ -12,7 +12,7 @@ struct NuevoProyectoView: View {
     var usuario: Usuario
     var proy_editar: Proyecto? = nil
     
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     
     @State private var mostrar_msj = false
     @State private var mensaje = ""
@@ -79,7 +79,7 @@ struct NuevoProyectoView: View {
     var backButtonView:some View{
         HStack{
             Button(action:{
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }){
                 HStack(spacing: 4){
                     Image(systemName: "chevron.left")
@@ -262,7 +262,7 @@ struct NuevoProyectoView: View {
         
         if resultado {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }
         }
     }

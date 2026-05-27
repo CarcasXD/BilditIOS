@@ -13,7 +13,7 @@ struct EspecificacionesView: View {
     var proyecto: Proyecto
     var partida: Partida
     
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     
     @State private var descripciones: [Descripcion] = []
     @State private var totalPartida: Double = 0
@@ -47,7 +47,7 @@ struct EspecificacionesView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -204,7 +204,7 @@ struct EspecificacionesView: View {
             mostrar_msj = true
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }
         } else {
             mensaje = "No se pudo cerrar la partida"

@@ -14,7 +14,7 @@ struct AgregarRecursoView: View {
     var partida: Partida
     var descripcion: Descripcion
     
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     
     @State private var nom_recurso = ""
     @State private var unidad = ""
@@ -46,7 +46,7 @@ struct AgregarRecursoView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -194,7 +194,7 @@ struct AgregarRecursoView: View {
             mostrar_msj = true
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }
         } else {
             mensaje = "No se pudo agregar el recurso"

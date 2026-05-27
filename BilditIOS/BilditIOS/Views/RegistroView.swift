@@ -9,7 +9,7 @@ import SwiftUI
 
 struct RegistroView: View {
     
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     @State var usuario = ""
     @State var contrasena = ""
     @State var nombre = ""
@@ -254,7 +254,7 @@ struct RegistroView: View {
             ocupacion = "Ingeniero"
             
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }
         } else {
             mensaje = "No se pudo guardar el usuario"

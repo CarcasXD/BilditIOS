@@ -16,7 +16,7 @@ struct DetalleProyectoCerradoView: View {
     @State private var ver_pdf = false
     @State private var mostrar_msj = false
     @State private var mensaje = ""
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     @State private var partidas: [PartidaCerradaDetalle] = []
     @State private var expandida_id: Int? = nil
     
@@ -52,7 +52,7 @@ struct DetalleProyectoCerradoView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -207,7 +207,7 @@ struct DetalleProyectoCerradoView: View {
             Spacer().frame(height: 24)
             
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 Text("Cerrar")
                     .font(.system(size: 18, weight: .bold))

@@ -10,7 +10,7 @@ import SwiftUI
 struct ProyectosCerradosView: View {
     
     var usuario: Usuario
-    @Environment(\.presentationMode) var present_mode
+    @Environment(\.presentationMode) var presentationMode
     
     @State private var proyectos: [ProyectoCerrado] = []
     
@@ -39,7 +39,7 @@ struct ProyectosCerradosView: View {
     var backButtonView: some View {
         HStack {
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 HStack(spacing: 4) {
                     Image(systemName: "chevron.left")
@@ -96,7 +96,7 @@ struct ProyectosCerradosView: View {
             Spacer().frame(height: 24)
             
             Button(action: {
-                present_mode.wrappedValue.dismiss()
+                presentationMode.wrappedValue.dismiss()
             }) {
                 Text("Cerrar")
                     .font(.system(size: 18, weight: .bold))

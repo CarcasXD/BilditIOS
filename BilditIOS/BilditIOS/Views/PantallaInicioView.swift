@@ -7,8 +7,13 @@
 
 import SwiftUI
 
+
+
+
+
 struct PantallaInicioView: View {
     
+    @Environment(\.presentationMode) var presentationMode
     var usuario: Usuario
     @State private var proyectos: [Proyecto] = []
     
@@ -19,6 +24,7 @@ struct PantallaInicioView: View {
             
             ScrollView {
                 VStack(spacing: 0) {
+                    logoutButtonView
                     encabezadoView
                     botonesView
                     listaProyectosView
@@ -44,6 +50,24 @@ struct PantallaInicioView: View {
             
             Spacer().frame(height: 18)
         }
+    }
+    
+    var logoutButtonView: some View {
+        HStack {
+            Spacer()
+            
+            Button(action: {
+                presentationMode.wrappedValue.dismiss()
+            }) {
+                Text("Logout")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+                    .frame(width: 100, height: 36)
+                    .background(Color.red)
+                    .cornerRadius(10)
+            }
+        }
+        .padding(.top, 20)
     }
     
     var botonesView: some View {
